@@ -21,6 +21,8 @@ def clip_qk(model, log_max_only=False) -> float:
         log_max_attention_logit = 0
         for model_chunk in model:
             for transformer_layer in model_chunk.module.module.decoder.layers:
+                if not hasattr(transformer_layer, 'self_attention'):
+                    continue
                 if hasattr(transformer_layer.self_attention, 'clip_qk'):
                     if (
                         transformer_layer.self_attention.core_attention.current_max_attn_logits
