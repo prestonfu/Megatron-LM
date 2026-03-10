@@ -43,6 +43,31 @@ except ImportError:
 # MOE logging
 _MOE_LAYER_WISE_LOGGING_TRACKER: dict = {}
 
+# Per-layer tokens-per-expert tracker: {layer_number: tensor([num_experts])}
+_TOKENS_PER_EXPERT_TRACKER: dict = {}
+
+
+def get_tokens_per_expert_tracker() -> dict:
+    """Return the per-layer tokens-per-expert tracker."""
+    global _TOKENS_PER_EXPERT_TRACKER
+    return _TOKENS_PER_EXPERT_TRACKER
+
+
+def clear_tokens_per_expert_tracker() -> None:
+    """Clear the per-layer tokens-per-expert tracker."""
+    global _TOKENS_PER_EXPERT_TRACKER
+    _TOKENS_PER_EXPERT_TRACKER = {}
+
+
+def save_tokens_per_expert(layer_number: int, tokens_per_expert: torch.Tensor) -> None:
+    """Save tokens-per-expert for a given layer (accumulates across microbatches)."""
+    if layer_number is None:
+        return
+    tracker = get_tokens_per_expert_tracker()
+    if layer_number not in tracker:
+        tracker[layer_number] = torch.zeros_like(tokens_per_expert)
+    tracker[layer_number] += tokens_per_expert.detach()
+
 
 def switch_load_balancing_loss_func(
     probs: torch.Tensor,
